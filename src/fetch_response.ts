@@ -1,5 +1,7 @@
 export class FetchResponse {
-  constructor (response) {
+  response: Response
+  
+  constructor (response: Response) {
     this.response = response
   }
 

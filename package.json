@@ -17,10 +17,22 @@
   "bugs": {
     "url": "https://github.com/rails/request.js"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "lint": "standard src"
+    "lint": "standard src",
+    "clean": "rm -fr dist",
+    "clean:win": "rmdir /s /q dist",
+    "build": "tsc --noEmit false --declaration true --emitDeclarationOnly true --outDir dist/types && rollup -c",
+    "build:win": "tsc --noEmit false --declaration true --emitDeclarationOnly true --outDir dist/types & rollup -c",
+    "watch": "rollup -wc"
   },
   "devDependencies": {
-    "standard": "^16.0.3"
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@rollup/plugin-typescript": "^8.2.1",
+    "rollup": "^2.51.1",
+    "standard": "^16.0.3",
+    "typescript": "^4.3.2"
   }
 }

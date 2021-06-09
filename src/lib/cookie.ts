@@ -1,4 +1,6 @@
-export function getCookie (name) {
+export function getCookie (name: string | null) {
+  if (!name) return;
+  
   const cookies = document.cookie ? document.cookie.split('; ') : []
   const prefix = `${encodeURIComponent(name)}=`
   const cookie = cookies.find(cookie => cookie.startsWith(prefix))

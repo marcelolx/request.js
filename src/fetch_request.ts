@@ -1,9 +1,32 @@
 import { FetchResponse } from './fetch_response'
-import { RequestInterceptor } from './request_interceptor'
 import { getCookie } from './lib/cookie'
+import { RequestInterceptor } from './request_interceptor'
+
+export enum FetchResponseKind {
+  html,
+  turboStream,
+  json,
+  any
+}
+
+export interface FetchRequestInit extends RequestInit {
+  /**
+   * A string indicating the request Content-Type
+   */
+  contentType?: string
+
+  /**
+   * A enum indicating the response kind that the request accepts
+   */
+  responseKind?: FetchResponseKind | string
+}
 
 export class FetchRequest {
-  constructor (method, url, options = {}) {
+  method!: string
+  url!: string
+  options: FetchRequestInit
+
+  constructor (method: string, url: string, options: FetchRequestInit = {}) {
     this.method = method
     this.url = url
     this.options = options
@@ -18,23 +41,27 @@ export class FetchRequest {
     } catch (error) {
       console.error(error)
     }
+    
     const response = new FetchResponse(await window.fetch(this.url, this.fetchOptions))
 
     if (response.unauthenticated && response.authenticationURL) {
       return Promise.reject(window.location.href = response.authenticationURL)
     }
 
-    if (response.ok && response.isTurboStream) { response.renderTurboStream() }
+    if (response.ok && response.isTurboStream) { 
+      response.renderTurboStream()
+    }
+    
     return response
   }
 
-  addHeader (key, value) {
+  addHeader (key: string, value: string) {    
     const headers = this.additionalHeaders
-    headers[key] = value
+    headers.set(key, value)
     this.options.headers = headers
   }
 
-  get fetchOptions () {
+  get fetchOptions (): RequestInit {
     return {
       method: this.method.toUpperCase(),
       headers: this.headers,
@@ -46,26 +73,27 @@ export class FetchRequest {
   }
 
   get headers () {
-    return compact(
-      Object.assign({
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-Token': this.csrfToken,
-        'Content-Type': this.contentType,
-        Accept: this.accept
-      },
-      this.additionalHeaders)
-    )
+    return compact({ ...this.defaultHeaders, ...this.additionalHeaders })
   }
 
-  get csrfToken () {
-    return getCookie(metaContent('csrf-param')) || metaContent('csrf-token')
+  get defaultHeaders (): HeadersInit {
+    return {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': this.csrfToken,
+      'Content-Type': this.contentType,
+      'Accept': this.accept
+    }
   }
 
-  get contentType () {
+  get csrfToken (): string {
+    return getCookie(metaContent('csrf-param')) || metaContent('csrf-token') || ''
+  }
+
+  get contentType (): string {
     if (this.options.contentType) {
       return this.options.contentType
     } else if (this.body == null || this.body instanceof window.FormData) {
-      return undefined
+      return ''
     } else if (this.body instanceof window.File) {
       return this.body.type
     }
@@ -98,25 +126,24 @@ export class FetchRequest {
     return this.options.signal
   }
 
-  get additionalHeaders () {
-    return this.options.headers || {}
+  get additionalHeaders (): Headers {
+    return new Headers(this.options.headers || {})
   }
 }
 
-function compact (object) {
-  const result = {}
+function compact (object: Headers) {
+  const result = new Headers()
 
-  for (const key in object) {
-    const value = object[key]
-    if (value !== undefined) {
-      result[key] = value
+  for (const [key, value] of object) {
+    if ((value !== undefined) || (value !== '')) {
+      result.set(key, value)
     }
   }
 
   return result
 }
 
-function metaContent (name) {
-  const element = document.head.querySelector(`meta[name="${name}"]`)
+function metaContent (name: string) {
+  const element: HTMLMetaElement | null = document.head.querySelector(`meta[name="${name}"]`)
   return element && element.content
 }
