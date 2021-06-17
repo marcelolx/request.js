@@ -18,9 +18,13 @@
     "url": "https://github.com/rails/request.js"
   },
   "scripts": {
-    "lint": "standard src"
+    "lint": "standard src",
+    "test": "NODE_OPTIONS=--inspect node src/tests/runner.js"
   },
   "devDependencies": {
     "standard": "^16.0.3"
+  },
+  "dependencies": {
+    "intern": "^4.9.1"
   }
 }
